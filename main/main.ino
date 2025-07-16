@@ -24,7 +24,7 @@
 #include "esp_random.h"
 
 AudioEngine audioEngine;
-WavetableSynth wavetableSynth(DEFAULT_SYNTH_FREQUENCY, 100, WavetableSynth::SINE);
+WavetableSynth wavetableSynth(DEFAULT_SYNTH_FREQUENCY, 100, SINE_WT);
 FMSynth fmSynth(DEFAULT_SYNTH_FREQUENCY, 1.0f, 1.0f, 100);
 GranularEffect granularEffect(10.0f, 512, 0.3f);
 EnhancedLowPassFilter lowpass(5000.0f, 0.1f);
