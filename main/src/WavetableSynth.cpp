@@ -5,7 +5,7 @@
 #include <string>
 #include <string>
 
-int16_t WavetableSynth::wavetables[NUM_WAVEFORMS_WT][WavetableSynth::WAVETABLE_SIZE];
+int16_t WavetableSynth::wavetables[WavetableSynth::NUM_WAVEFORMS][WavetableSynth::WAVETABLE_SIZE];
 bool WavetableSynth::wavetablesInitialized = false;
 
 void WavetableSynth::initializeWavetables() {
@@ -13,17 +13,17 @@ void WavetableSynth::initializeWavetables() {
     Serial.println("WavetableSynth: Initializing 16-bit wavetables...");
     for (size_t i = 0; i < WAVETABLE_SIZE; ++i) {
         float phaseNorm = static_cast<float>(i) / WAVETABLE_SIZE; // 0.0 to <1.0
-        wavetables[SINE_WT][i]     = static_cast<int16_t>(32767.0f * sinf(TWO_PI * phaseNorm));
-        wavetables[SAW_WT][i]      = static_cast<int16_t>(32767.0f * (2.0f * phaseNorm - 1.0f)); // Ramps -1 to 1
-        wavetables[SQUARE_WT][i]   = (phaseNorm < 0.5f) ? 16384 : -16384; // Reduced amplitude
+        wavetables[SINE][i]     = static_cast<int16_t>(32767.0f * sinf(TWO_PI * phaseNorm));
+        wavetables[SAW][i]      = static_cast<int16_t>(32767.0f * (2.0f * phaseNorm - 1.0f)); // Ramps -1 to 1
+        wavetables[SQUARE][i]   = (phaseNorm < 0.5f) ? 16384 : -16384; // Reduced amplitude
         float triSample = 0.0f;
         if (phaseNorm < 0.25f) triSample = 4.0f * phaseNorm;
         else if (phaseNorm < 0.75f) triSample = 2.0f - 4.0f * phaseNorm;
         else triSample = -4.0f + 4.0f * phaseNorm;
-        wavetables[TRIANGLE_WT][i] = static_cast<int16_t>(32767.0f * triSample);
-        wavetables[NOISE_WT][i]    = static_cast<int16_t>(random(-32767, 32768));
+        wavetables[TRIANGLE][i] = static_cast<int16_t>(32767.0f * triSample);
+        wavetables[NOISE][i]    = static_cast<int16_t>(random(-32767, 32768));
     }
-    memcpy(wavetables[CUSTOM_WT], wavetables[SINE_WT], WAVETABLE_SIZE * sizeof(int16_t));
+    memcpy(wavetables[CUSTOM], wavetables[SINE], WAVETABLE_SIZE * sizeof(int16_t));
     wavetablesInitialized = true;
     Serial.println("WavetableSynth: Wavetables initialized.");
 }
@@ -134,8 +134,8 @@ float WavetableSynth::getAmplitude() const { // Returns 0-127
     return static_cast<float>(currentAmplitude);
 }
 
-void WavetableSynth::setWaveform(WT_WaveformType waveform) {
-    if (waveform < NUM_WAVEFORMS_WT) {
+void WavetableSynth::setWaveform(WaveformType waveform) {
+    if (waveform < NUM_WAVEFORMS) {
         currentWaveform = waveform;
         Serial.printf("WavetableSynth Waveform: %s\n", getWaveformName(waveform));
     }
@@ -162,9 +162,9 @@ void WavetableSynth::generateCustomWaveform(float (*waveFunction)(float)) {
     Serial.println("WavetableSynth: Custom waveform generated.");
 }
 
-const int16_t* WavetableSynth::getWavetableData(WT_WaveformType waveform) const {
-    WT_WaveformType typeToGet = (waveform == NUM_WAVEFORMS_WT) ? currentWaveform : waveform;
-    if (typeToGet < NUM_WAVEFORMS_WT) {
+const int16_t* WavetableSynth::getWavetableData(WaveformType waveform) const {
+    WaveformType typeToGet = (waveform == NUM_WAVEFORMS) ? currentWaveform : waveform;
+    if (typeToGet < NUM_WAVEFORMS) {
         return wavetables[typeToGet];
     }
     return nullptr;
@@ -174,14 +174,14 @@ void WavetableSynth::updatePhaseIncrement() {
     phaseIncrement = static_cast<uint32_t>((currentFrequency * WAVETABLE_SIZE * 256.0f) / SAMPLE_RATE);
 }
 
-const char* WavetableSynth::getWaveformName(WT_WaveformType waveform) {
+const char* WavetableSynth::getWaveformName(WaveformType waveform) { // Made static
     switch (waveform) {
-        case SINE_WT: return "SINE";
-        case SAW_WT: return "SAW";
-        case SQUARE_WT: return "SQUARE";
-        case TRIANGLE_WT: return "TRIANGLE";
-        case NOISE_WT: return "NOISE";
-        case CUSTOM_WT: return "CUSTOM";
+        case SINE: return "SINE";
+        case SAW: return "SAW";
+        case SQUARE: return "SQUARE";
+        case TRIANGLE: return "TRIANGLE";
+        case NOISE: return "NOISE";
+        case CUSTOM: return "CUSTOM";
         default: return "UNKNOWN";
     }
 }

@@ -40,7 +40,7 @@ public:
                    GeneticController& geneticController,
                    DCBlocker& dcBlocker,
                    AntiAliasFilter& antiAlias,
-                   Presets::PresetManager& presetManager,
+                   PresetManager& presetManager,
                    RoutingManager& routingManager);
 
     void handleCommand(char* command);
@@ -70,7 +70,7 @@ private:
     GeneticController& geneticController;
     DCBlocker& dcBlocker;
     AntiAliasFilter& antiAliasFilter;
-    Presets::PresetManager& presetManager;
+    PresetManager& presetManager;
     RoutingManager& routingManager;
 
     SynthMode currentSynthMode = WAVETABLE_MODE;

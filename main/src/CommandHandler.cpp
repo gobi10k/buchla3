@@ -37,7 +37,7 @@ CommandHandler::CommandHandler(AudioEngine& engine,
                                GeneticController& geneticCtrl,
                                DCBlocker& dc,
                                AntiAliasFilter& antiAlias,
-                               Presets::PresetManager& presets,
+                               PresetManager& presets,
                                RoutingManager& routing)
     : audioEngine(engine),
       wavetableSynth(wavetable),
@@ -505,7 +505,7 @@ void CommandHandler::printDetailedStatus() {
                   audioEngine.getBufferCapacity() > 0 ? ((float)audioEngine.getBufferLevel() / audioEngine.getBufferCapacity() * 100.0f) : 0.0f,
                   audioEngine.getUnderruns(), audioEngine.getOverruns());
     Serial.printf("Sys: Samples=%u, AvgRate=%.1f Hz, Heap=%u, CPU=%u MHz\n",
-                  totalSamples, avgSamplerate, esp_get_free_heap_size(), getCpuFrequencyMhz());
+                  totalSamples, avgSampleRate, esp_get_free_heap_size(), getCpuFrequencyMhz());
     Serial.println("============================================");
 }
 

@@ -19,7 +19,7 @@ private:
     static const size_t WAVETABLE_SIZE = 256;
     static const size_t WAVETABLE_MASK = WAVETABLE_SIZE - 1;
 
-    static int16_t wavetables[NUM_WAVEFORMS_WT][WAVETABLE_SIZE];
+    static int16_t wavetables[NUM_WAVEFORMS][WAVETABLE_SIZE];
     static bool wavetablesInitialized;
 
     uint32_t phase;
@@ -36,7 +36,7 @@ private:
     void updatePhaseIncrement();
 
 public:
-    WavetableSynth(float freq = DEFAULT_SYNTH_FREQUENCY, uint8_t amp = 100, WaveformType waveform = SINE_WT);
+    WavetableSynth(float freq = DEFAULT_SYNTH_FREQUENCY, uint8_t amp = 100, WaveformType waveform = SINE);
 
     // AudioSource overrides
     void generateSample(float& sample) override;
@@ -60,7 +60,7 @@ public:
     bool loadCustomWavetable(const int16_t* data, size_t size_bytes);
     void generateCustomWaveform(float (*waveFunction)(float phaseZeroToOne)); // Phase 0.0 to 1.0
 
-    const int16_t* getWavetableData(WaveformType waveform = NUM_WAVEFORMS_WT) const;
+    const int16_t* getWavetableData(WaveformType waveform = NUM_WAVEFORMS) const;
     size_t getWavetableSize() const { return WAVETABLE_SIZE; }
 
     static void ensureWavetablesInitialized();

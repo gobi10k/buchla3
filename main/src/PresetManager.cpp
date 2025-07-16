@@ -1,7 +1,5 @@
 #include "PresetManager.h"
 
-namespace Presets {
-
 // Helper for linear interpolation
 float lerp(float a, float b, float f) {
     return a + f * (b - a);
@@ -23,7 +21,7 @@ PresetManager::PresetManager(WavetableSynth& wt, FMSynth& fm, KarplusStrongSynth
     // Preset 0: Default state (already saved)
 
     // Preset 1: Bright Saw with Reverb
-    presets[1].wavetable.waveform = SAW_WT;
+    presets[1].wavetable.waveform = WavetableSynth::SAW;
     presets[1].lpf.cutoff = 8000.0f;
     presets[1].lpf.resonance = 0.2f;
     presets[1].reverb.room_size = 0.9f;
@@ -31,7 +29,7 @@ PresetManager::PresetManager(WavetableSynth& wt, FMSynth& fm, KarplusStrongSynth
     presets[1].reverb.mix = 0.4f;
 
     // Preset 2: FM Bells
-    presets[2].fm.algorithm = FEEDBACK_FM;
+    presets[2].fm.algorithm = FMSynth::FEEDBACK_FM;
     presets[2].fm.mod_ratio = 3.5f;
     presets[2].fm.mod_index = 15.0f;
     presets[2].fm.mod_decay = 0.5f;
@@ -181,45 +179,43 @@ void PresetManager::applyPreset(const Preset& preset) {
     vocoderSynth.setParameter("outputGain", preset.vocoder.output_gain);
 
     // --- Effects ---
-    lowpass.setParameter("cutoff", preset.lpf.cutoff);
-    lowpass.setParameter("resonance", preset.lpf.resonance);
+    lowpass.setCutoff(preset.lpf.cutoff);
+    lowpass.setResonance(preset.lpf.resonance);
 
-    chorusEffect.setParameter("rate", preset.chorus.rate);
-    chorusEffect.setParameter("depth", preset.chorus.depth);
-    chorusEffect.setParameter("delay", preset.chorus.delay);
-    chorusEffect.setParameter("mix", preset.chorus.mix);
-    chorusEffect.setParameter("feedback", preset.chorus.feedback);
+    chorusEffect.setRate(preset.chorus.rate);
+    chorusEffect.setDepth(preset.chorus.depth);
+    chorusEffect.setBaseDelay(preset.chorus.delay);
+    chorusEffect.setMix(preset.chorus.mix);
+    chorusEffect.setFeedback(preset.chorus.feedback);
 
-    flangerEffect.setParameter("rate", preset.flanger.rate);
-    flangerEffect.setParameter("depth", preset.flanger.depth);
-    flangerEffect.setParameter("delay", preset.flanger.delay);
-    flangerEffect.setParameter("mix", preset.flanger.mix);
-    flangerEffect.setParameter("feedback", preset.flanger.feedback);
+    flangerEffect.setRate(preset.flanger.rate);
+    flangerEffect.setDepth(preset.flanger.depth);
+    flangerEffect.setBaseDelay(preset.flanger.delay);
+    flangerEffect.setMix(preset.flanger.mix);
+    flangerEffect.setFeedback(preset.flanger.feedback);
 
-    reverbEffect.setParameter("roomSize", preset.reverb.room_size);
-    reverbEffect.setParameter("damping", preset.reverb.damping);
-    reverbEffect.setParameter("mix", preset.reverb.mix);
+    reverbEffect.setRoomSize(preset.reverb.room_size);
+    reverbEffect.setDamping(preset.reverb.damping);
+    reverbEffect.setMix(preset.reverb.mix);
 
-    buchlaLPG.setParameter("cv", preset.buchlaLPG.cv);
-    buchlaLPG.setParameter("resonance", preset.buchlaLPG.resonance);
-    buchlaLPG.setParameter("mode", preset.buchlaLPG.mode);
+    buchlaLPG.setCv(preset.buchlaLPG.cv);
+    buchlaLPG.setResonance(preset.buchlaLPG.resonance);
+    buchlaLPG.setMode((BuchlaLPG::Mode)preset.buchlaLPG.mode);
 
-    limiter.setParameter("threshold", preset.limiter.threshold);
+    limiter.setThreshold(preset.limiter.threshold);
 
-    compressor.setParameter("threshold", preset.compressor.threshold);
-    compressor.setParameter("ratio", preset.compressor.ratio);
-    compressor.setParameter("attack", preset.compressor.attack);
-    compressor.setParameter("release", preset.compressor.release);
+    compressor.setThreshold(preset.compressor.threshold);
+    compressor.setRatio(preset.compressor.ratio);
+    compressor.setAttack(preset.compressor.attack);
+    compressor.setRelease(preset.compressor.release);
 
-    granularEffect.setParameter("dry_wet", preset.granular.dry_wet);
-    granularEffect.setParameter("density", preset.granular.density);
-    granularEffect.setParameter("grain_size", preset.granular.grain_size);
-    granularEffect.setParameter("grain_variation", preset.granular.grain_variation);
-    granularEffect.setParameter("playback_rate", preset.granular.playback_rate);
-    granularEffect.setParameter("pitch_variation", preset.granular.pitch_variation);
-    granularEffect.setParameter("time_shift", preset.granular.time_shift);
-    granularEffect.setParameter("spray", preset.granular.spray);
+    granularEffect.setMix(preset.granular.dry_wet);
+    granularEffect.setDensity(preset.granular.density);
+    granularEffect.setGrainSize(preset.granular.grain_size);
+    granularEffect.setGrainSizeVariation(preset.granular.grain_variation);
+    granularEffect.setPlaybackRate(preset.granular.playback_rate);
+    granularEffect.setPitchVariation(preset.granular.pitch_variation);
+    granularEffect.setTimeShift(preset.granular.time_shift);
+    granularEffect.setPositionSpray(preset.granular.spray);
     granularEffect.setWindowType(preset.granular.window_type);
 }
-
-} // namespace Presets

@@ -13,17 +13,14 @@
 #include "Limiter.h"
 #include "Compressor.h"
 #include "GranularEffect.h"
-#include "GeneticController.h"
 
-namespace Presets {
-
-struct Wavetable {
+struct WavetablePreset {
     float frequency;
     float amplitude;
     WT_WaveformType waveform;
 };
 
-struct FMSynth {
+struct FMSynthPreset {
     float frequency;
     float amplitude;
     float mod_ratio;
@@ -46,30 +43,30 @@ struct FMSynth {
     float car_release;
 };
 
-struct KarplusStrong {
+struct KarplusStrongPreset {
     float frequency;
     float amplitude;
     float feedback;
 };
 
-struct Genetic {
+struct GeneticSynthPreset {
     float frequency;
     float amplitude;
 };
 
-struct Vocoder {
+struct VocoderPreset {
     float q_factor;
     float attack_time;
     float release_time;
     float output_gain;
 };
 
-struct EnhancedLowPassFilter {
+struct EnhancedLowPassFilterPreset {
     float cutoff;
     float resonance;
 };
 
-struct Chorus {
+struct ChorusPreset {
     float rate;
     float depth;
     float delay;
@@ -77,7 +74,7 @@ struct Chorus {
     float feedback;
 };
 
-struct Flanger {
+struct FlangerPreset {
     float rate;
     float depth;
     float delay;
@@ -85,30 +82,30 @@ struct Flanger {
     float feedback;
 };
 
-struct Reverb {
+struct ReverbPreset {
     float room_size;
     float damping;
     float mix;
 };
 
-struct BuchlaLPG {
+struct BuchlaLPGPreset {
     float cv;
     float resonance;
     float mode;
 };
 
-struct Limiter {
+struct LimiterPreset {
     float threshold;
 };
 
-struct Compressor {
+struct CompressorPreset {
     float threshold;
     float ratio;
     float attack;
     float release;
 };
 
-struct Granular {
+struct GranularPreset {
     float dry_wet;
     float density;
     float grain_size;
@@ -121,19 +118,19 @@ struct Granular {
 };
 
 struct Preset {
-    Wavetable wavetable;
-    FMSynth fm;
-    KarplusStrong karplus;
-    Genetic genetic;
-    Vocoder vocoder;
-    EnhancedLowPassFilter lpf;
-    Chorus chorus;
-    Flanger flanger;
-    Reverb reverb;
-    BuchlaLPG lpg;
-    Limiter limiter;
-    Compressor compressor;
-    Granular granular;
+    WavetablePreset wavetable;
+    FMSynthPreset fm;
+    KarplusStrongPreset karplus;
+    GeneticSynthPreset genetic;
+    VocoderPreset vocoder;
+    EnhancedLowPassFilterPreset lpf;
+    ChorusPreset chorus;
+    FlangerPreset flanger;
+    ReverbPreset reverb;
+    BuchlaLPGPreset lpg;
+    LimiterPreset limiter;
+    CompressorPreset compressor;
+    GranularPreset granular;
 };
 
 class PresetManager {
@@ -166,5 +163,3 @@ private:
     static const int MAX_PRESETS = 16;
     Preset presets[MAX_PRESETS];
 };
-
-} // namespace Presets
