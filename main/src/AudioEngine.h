@@ -7,6 +7,7 @@
 #include "freertos/task.h"
 
 #include "config.h"
+#include <memory>
 #include "AudioBuffer.h"
 #include "AudioSource.h"
 #include "AudioEffect.h"
@@ -19,13 +20,15 @@ class AudioEngine {
 private:
     static AudioEngine* instance;
     TaskHandle_t audioTaskHandle;
-    AudioBuffer* outputBuffer;
+    std::unique_ptr<AudioBuffer> outputBuffer;
     AudioSource* currentAudioSource; // Renamed for clarity
     AudioEffect* effects[MAX_EFFECTS];  // MAX_EFFECTS from config.h
     size_t effectCount;
     volatile bool running; // Renamed for clarity
     esp_timer_handle_t sampleTimer;
     SemaphoreHandle_t runningSemaphore;
+    SemaphoreHandle_t audioSourceMutex;
+    SemaphoreHandle_t effectsMutex;
     // For final float to uint8_t conversion (one for each channel)
     DitherNoiseShaping dacDithererLeft;
     DitherNoiseShaping dacDithererRight;
@@ -33,6 +36,14 @@ private:
     volatile uint32_t underrunCounter; // Renamed for clarity
     volatile uint32_t overrunCounter;  // Renamed for clarity
     volatile uint32_t processedSampleCount; // Renamed for clarity
+
+    struct AudioStats {
+        uint32_t maxProcessingTime;
+        uint32_t avgProcessingTime;
+        uint32_t bufferUnderruns;
+        uint32_t bufferOverruns;
+        float cpuUsage;
+    } stats;
 
     float masterVolume; // New: Master volume control (0.0 to N.N)
 
@@ -56,6 +67,9 @@ public:
     size_t getBufferCapacity() const; // Total capacity of the buffer
     void resetCounters(); // Resets underrun, overrun, and processed sample counters
 
+    const AudioStats& getStats() const { return stats; }
+    void resetStats();
+
     void setMasterVolume(float volume);
     float getMasterVolume() const;
 
@@ -65,6 +79,7 @@ private:
     static void audioProcessingTask(void* parameter); // Renamed task wrapper
     void runAudioTask(); // Renamed actual task method
     static void onSampleTimer(void* arg); // Renamed timer callback
-    void generateAndOutputSample(); // Renamed sample output method
     void cleanup(); // Internal cleanup method
+    bool validateConfiguration();
+    void handleTimerError();
 };

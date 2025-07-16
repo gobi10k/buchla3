@@ -19,6 +19,9 @@ AudioEngine::AudioEngine()
     instance = this;
     memset(effects, 0, sizeof(effects)); // Clear effects array
     runningSemaphore = xSemaphoreCreateMutex();
+    audioSourceMutex = xSemaphoreCreateMutex();
+    effectsMutex = xSemaphoreCreateMutex();
+    resetStats();
 }
 
 AudioEngine::~AudioEngine() {
@@ -28,9 +31,15 @@ AudioEngine::~AudioEngine() {
         instance = nullptr;
     }
     vSemaphoreDelete(runningSemaphore);
+    vSemaphoreDelete(audioSourceMutex);
+    vSemaphoreDelete(effectsMutex);
 }
 
 bool AudioEngine::initialize() {
+    if (!validateConfiguration()) {
+        return false;
+    }
+
     Serial.println("AudioEngine: Initializing DAC...");
     if (dac_output_enable(DAC_CHANNEL_1) != ESP_OK) {
         Serial.println("AudioEngine: DAC enable failed!");
@@ -40,7 +49,7 @@ bool AudioEngine::initialize() {
     dac_output_voltage(DAC_CHANNEL_1, 128); // Set to midpoint initially
     Serial.println("AudioEngine: DAC initialized.");
 
-    outputBuffer = new AudioBuffer(AUDIO_BUFFER_SIZE); // AUDIO_BUFFER_SIZE from config.h
+    outputBuffer = std::make_unique<AudioBuffer>(AUDIO_BUFFER_SIZE); // AUDIO_BUFFER_SIZE from config.h
     if (!outputBuffer || !outputBuffer->isValid()) {
         Serial.println("AudioEngine: Buffer allocation failed!");
         cleanup();
@@ -95,6 +104,7 @@ bool AudioEngine::start() {
     if (esp_timer_start_periodic(sampleTimer, timerPeriodMicroseconds) != ESP_OK) {
         Serial.println("AudioEngine: Failed to start sample timer!");
         running = false;
+        handleTimerError();
         return false;
     }
     Serial.printf("AudioEngine: Started. Sample timer period: %llu us (Target: %d Hz)\n", timerPeriodMicroseconds, SAMPLE_RATE);
@@ -117,9 +127,9 @@ void AudioEngine::stop() {
 }
 
 void AudioEngine::setAudioSource(AudioSource* source) {
-    // This should ideally be thread-safe if called while running.
-    // For simplicity, assume it's called when safe (e.g., engine stopped or via controlled mechanism).
+    xSemaphoreTake(audioSourceMutex, portMAX_DELAY);
     currentAudioSource = source;
+    xSemaphoreGive(audioSourceMutex);
     if (source) {
         Serial.printf("AudioEngine: Audio source set to %p\n", source);
     } else {
@@ -128,17 +138,25 @@ void AudioEngine::setAudioSource(AudioSource* source) {
 }
 
 bool AudioEngine::addEffect(AudioEffect* effect) {
-    if (effectCount >= MAX_EFFECTS) {
-        Serial.println("AudioEngine: Max effects reached, cannot add more.");
-        return false;
+    xSemaphoreTake(effectsMutex, portMAX_DELAY);
+    bool result = false;
+    if (effectCount < MAX_EFFECTS) {
+        effects[effectCount++] = effect;
+        result = true;
     }
-    effects[effectCount++] = effect;
-    Serial.printf("AudioEngine: Effect %p added. Total effects: %d\n", effect, effectCount);
-    return true;
+    xSemaphoreGive(effectsMutex);
+    if(result) {
+        Serial.printf("AudioEngine: Effect %p added. Total effects: %d\n", effect, effectCount);
+    } else {
+        Serial.println("AudioEngine: Max effects reached, cannot add more.");
+    }
+    return result;
 }
 
 void AudioEngine::removeAllEffects() {
+    xSemaphoreTake(effectsMutex, portMAX_DELAY);
     effectCount = 0;
+    xSemaphoreGive(effectsMutex);
     // Optionally: memset(effects, 0, sizeof(effects)); but not strictly needed if using effectCount.
     Serial.println("AudioEngine: All effects removed.");
 }
@@ -173,74 +191,91 @@ float AudioEngine::getMasterVolume() const {
 }
 
 void AudioEngine::runAudioTask() {
-    float currentSample_float; // Changed to float
+    float currentSample;
+    uint32_t processingStartTime;
+    uint32_t processingTime;
 
     while (true) {
+        // Wait for a notification from the timer ISR.
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+        processingStartTime = micros();
+
         xSemaphoreTake(runningSemaphore, portMAX_DELAY);
         bool is_running = running;
         xSemaphoreGive(runningSemaphore);
+
         if (!is_running) {
-            vTaskDelay(pdMS_TO_TICKS(10));
             continue;
         }
 
-        if (outputBuffer && outputBuffer->space() >= (AUDIO_BUFFER_CHUNK_SIZE) ) {
-            for (int i = 0; i < AUDIO_BUFFER_CHUNK_SIZE; ++i) {
-                if (!running) break;
+        // Generate one sample
+        xSemaphoreTake(audioSourceMutex, portMAX_DELAY);
+        if (currentAudioSource && currentAudioSource->isActive()) {
+            currentAudioSource->generateSample(currentSample);
+            xSemaphoreGive(audioSourceMutex);
 
-                if (currentAudioSource && currentAudioSource->isActive()) {
-                    currentAudioSource->generateSample(currentSample_float);
-
-                    for (size_t j = 0; j < effectCount; ++j) {
-                        if (effects[j] && effects[j]->isEnabled()) {
-                            effects[j]->process(currentSample_float);
-                        }
-                    }
-                    if (!outputBuffer->write(currentSample_float)) { // Write float
-                        overrunCounter++;
-                        break;
-                    }
-                } else {
-                    outputBuffer->write(0.0f); // Silence as float
+            xSemaphoreTake(effectsMutex, portMAX_DELAY);
+            for (size_t j = 0; j < effectCount; ++j) {
+                if (effects[j] && effects[j]->isEnabled()) {
+                    effects[j]->process(currentSample);
                 }
             }
+            xSemaphoreGive(effectsMutex);
         } else {
-            vTaskDelay(pdMS_TO_TICKS(1));
+            xSemaphoreGive(audioSourceMutex);
+            currentSample = 0.0f; // Silence
         }
+
+        if (outputBuffer->space() > 0) {
+            if (!outputBuffer->write(currentSample)) {
+                overrunCounter++;
+            }
+        }
+
+        // Output the sample
+        float sampleToOutput_float;
+        if (outputBuffer && outputBuffer->read(sampleToOutput_float)) {
+            float finalSample = sampleToOutput_float * masterVolume;
+            // Constrain before dithering and conversion.
+            finalSample = constrain(finalSample, -1.0f, 1.0f);
+
+            uint8_t dac_sample;
+            if (fabsf(finalSample) < 0.0001f) { // Threshold for near-silence
+                dac_sample = 128; // Output midpoint directly, bypassing dither
+            } else {
+                // Use DitherNoiseShaping for float to uint8_t conversion
+                dac_sample = dacDithererLeft.process(finalSample);
+            }
+
+            dac_output_voltage(DAC_CHANNEL_1, dac_sample);
+            processedSampleCount++;
+        } else {
+            dac_output_voltage(DAC_CHANNEL_1, 128); // Underrun: output silence (midpoint)
+            underrunCounter++;
+            stats.bufferUnderruns++;
+        }
+
+        processingTime = micros() - processingStartTime;
+        if (processingTime > stats.maxProcessingTime) {
+            stats.maxProcessingTime = processingTime;
+        }
+        // A simple moving average could be implemented here for avgProcessingTime
+        stats.avgProcessingTime = (stats.avgProcessingTime + processingTime) / 2;
+        stats.bufferOverruns = overrunCounter;
+        // More complex CPU usage calculation would be needed for accurate stats
+        stats.cpuUsage = (float)stats.avgProcessingTime / (1000000.0f / SAMPLE_RATE) * 100.0f;
     }
 }
 
 void AudioEngine::onSampleTimer(void* arg) {
     AudioEngine* engine = static_cast<AudioEngine*>(arg);
     if (engine && engine->running) {
-        engine->generateAndOutputSample();
-    }
-}
-
-void AudioEngine::generateAndOutputSample() {
-    float sampleToOutput_float; // Changed to float
-    if (outputBuffer && outputBuffer->read(sampleToOutput_float)) {
-        float finalSample = sampleToOutput_float * masterVolume;
-        // Constrain before dithering and conversion.
-        finalSample = constrain(finalSample, -1.0f, 1.0f);
-
-        uint8_t dac_sample;
-        if (fabsf(finalSample) < 0.0001f) { // Threshold for near-silence
-            dac_sample = 128; // Output midpoint directly, bypassing dither
-        } else {
-            // Use DitherNoiseShaping for float to uint8_t conversion
-            dac_sample = dacDithererLeft.process(finalSample);
-            // dacDitherer.process already handles the scaling from -1..1 float to 0..255 uint8_t
-            // and applies dither/noise shaping. It also constrains the output to 0-255.
+        BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+        vTaskNotifyGiveFromISR(engine->audioTaskHandle, &xHigherPriorityTaskWoken);
+        if (xHigherPriorityTaskWoken) {
+            portYIELD_FROM_ISR();
         }
-
-        dac_output_voltage(DAC_CHANNEL_1, dac_sample);
-        processedSampleCount++;
-    } else {
-        // For underrun, output silence.
-        // Bypassing dither here too, as it's an explicit silence due to buffer empty.
-        dac_output_voltage(DAC_CHANNEL_1, 128); // Underrun: output silence (midpoint)
-        underrunCounter++;
     }
 }
 
@@ -263,11 +298,8 @@ void AudioEngine::cleanup() {
         Serial.println("AudioEngine: Sample timer deleted.");
     }
 
-    if (outputBuffer) {
-        delete outputBuffer;
-        outputBuffer = nullptr;
-        Serial.println("AudioEngine: Output buffer deleted.");
-    }
+    outputBuffer.reset();
+    Serial.println("AudioEngine: Output buffer deleted.");
 
     dac_output_disable(DAC_CHANNEL_1);
     Serial.println("AudioEngine: DAC disabled.");
@@ -275,4 +307,37 @@ void AudioEngine::cleanup() {
     currentAudioSource = nullptr;
     effectCount = 0;
     Serial.println("AudioEngine: Cleanup complete.");
+}
+
+bool AudioEngine::validateConfiguration() {
+    if (AUDIO_BUFFER_SIZE < SAMPLE_RATE / 100) { // Less than 10ms buffer
+        Serial.println("AudioEngine: Buffer too small for stable operation!");
+        return false;
+    }
+
+    if (AUDIO_TASK_PRIORITY >= configMAX_PRIORITIES) {
+        Serial.println("AudioEngine: Invalid task priority!");
+        return false;
+    }
+
+    return true;
+}
+
+void AudioEngine::handleTimerError() {
+    Serial.println("AudioEngine: Timer error detected, attempting recovery...");
+
+    if (esp_timer_stop(sampleTimer) == ESP_OK) {
+        uint64_t period = 1000000ULL / SAMPLE_RATE;
+        if (esp_timer_start_periodic(sampleTimer, period) == ESP_OK) {
+            Serial.println("AudioEngine: Timer recovery successful");
+            return;
+        }
+    }
+
+    Serial.println("AudioEngine: Timer recovery failed, stopping engine");
+    stop();
+}
+
+void AudioEngine::resetStats() {
+    memset(&stats, 0, sizeof(stats));
 }
