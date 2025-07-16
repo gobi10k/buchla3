@@ -3,8 +3,6 @@
 #include <Arduino.h>
 #include "esp_random.h"
 #include <string>
-#include <string>
-#include <string>
 
 GeneticController::GeneticController()
     : numParameters(0), currentGenomeIndex(0), generation(0),
@@ -12,7 +10,8 @@ GeneticController::GeneticController()
       currentMutationRate(0.1f), currentMorphSpeed(0.01f),
       targetSource(nullptr), targetEffect(nullptr),
       samplesSinceLastEvolution(0), evolutionIntervalSamples(SAMPLE_RATE / 10),
-      morphFromGenomeIndex(0), morphToGenomeIndex(1), currentMorphPosition(0.0f)
+      morphFromGenomeIndex(0), morphToGenomeIndex(1), currentMorphPosition(0.0f),
+      numMacroPoints(0), macroControlValue(0.0f)
        {
     for (int i = 0; i < MAX_CONTROLLABLE_PARAMETERS; i++) {
         parameters[i].name[0] = '\0';
@@ -50,6 +49,9 @@ void GeneticController::process(float& sample) {
             performMorph();
             updateAndApplyCurrentParameters();
             break;
+        case MACRO:
+            applyMacroControl();
+            break;
         default: break;
     }
     if (currentGenomeIndex < CONTROLLER_POPULATION_SIZE) {
@@ -80,6 +82,8 @@ void GeneticController::setParameter(const std::string& name, float value) {
         }
     } else if (name == "fitness") {
         rateCurrentGenome(value);
+    } else if (name == "macro_control") {
+        macroControlValue = constrain(value, 0.0f, 1.0f);
     }
 }
 
@@ -278,10 +282,71 @@ void GeneticController::performMorph() {
     }
 }
 
+bool GeneticController::addMacroControlPoint(float controlValue, const float* paramValues, int numValues) {
+    if (numMacroPoints >= MAX_MACRO_CONTROL_POINTS || numValues > numParameters) {
+        return false;
+    }
+    macroMap[numMacroPoints].controlValue = controlValue;
+    for (int i = 0; i < numValues; ++i) {
+        macroMap[numMacroPoints].paramValues[i] = paramValues[i];
+    }
+    numMacroPoints++;
+    return true;
+}
+
+void GeneticController::clearMacroControlPoints() {
+    numMacroPoints = 0;
+}
+
+void GeneticController::applyMacroControl() {
+    if (numMacroPoints < 2) return;
+
+    // Find the two control points to interpolate between
+    int p1_idx = -1, p2_idx = -1;
+    for (int i = 0; i < numMacroPoints; ++i) {
+        if (macroMap[i].controlValue <= macroControlValue) {
+            if (p1_idx == -1 || macroMap[i].controlValue > macroMap[p1_idx].controlValue) {
+                p1_idx = i;
+            }
+        }
+        if (macroMap[i].controlValue >= macroControlValue) {
+            if (p2_idx == -1 || macroMap[i].controlValue < macroMap[p2_idx].controlValue) {
+                p2_idx = i;
+            }
+        }
+    }
+
+    if (p1_idx == -1) p1_idx = p2_idx;
+    if (p2_idx == -1) p2_idx = p1_idx;
+
+    float factor = 0.0f;
+    if (p1_idx != p2_idx) {
+        factor = (macroControlValue - macroMap[p1_idx].controlValue) / (macroMap[p2_idx].controlValue - macroMap[p1_idx].controlValue);
+    }
+
+    for (int i = 0; i < numParameters; ++i) {
+        if (parameters[i].active) {
+            float val1 = macroMap[p1_idx].paramValues[i];
+            float val2 = macroMap[p2_idx].paramValues[i];
+            float interpolatedValue = val1 + factor * (val2 - val1);
+
+            float range = parameters[i].maxValue - parameters[i].minValue;
+            parameters[i].currentValue = parameters[i].minValue + (interpolatedValue * range);
+
+            if (targetSource) {
+                targetSource->setParameter(parameters[i].name, parameters[i].currentValue);
+            } else if (targetEffect) {
+                targetEffect->setParameter(parameters[i].name, parameters[i].currentValue);
+            }
+        }
+    }
+}
+
 const char* GeneticController::getControlModeName(ControlMode mode) {
     switch (mode) {
         case BYPASS: return "BYPASS"; case EVOLVE_CONTINUOUS: return "EVOLVE_CONTINUOUS";
         case EVOLVE_DISCRETE: return "EVOLVE_DISCRETE"; case MORPH_BETWEEN: return "MORPH_BETWEEN";
+        case MACRO: return "MACRO";
         default: return "UNKNOWN_CTRL_MODE";
     }
 }

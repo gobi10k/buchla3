@@ -27,15 +27,13 @@ private:
     std::vector<CombFilter> combFilters;
     std::vector<AllPassFilter> allPassFilters;
 
-    // Reverb parameters
-    float roomSize;     // 0.0 to 1.0, scales delay lengths and feedback
-    float damping;      // 0.0 to 1.0, affects high-frequency decay (simulated by feedback adjustment)
-    float dryWetMix;    // 0.0 (dry) to 1.0 (wet)
+    float roomSize;
+    float damping;
+    float dryWetMix;
 
-    // Internal state for filter configuration
     float currentSampleRate;
 
-    void configureFilters(); // Applies roomSize and damping to internal filters
+    void configureFilters();
 
 public:
     ReverbEffect(float initialRoomSize = 0.75f, float initialDamping = 0.5f, float initialMix = 0.3f);
@@ -44,7 +42,10 @@ public:
     void setParameter(const std::string& name, float value) override;
     void reset() override;
 
-    // Getters
+    void setRoomSize(float size);
+    void setDamping(float damping);
+    void setMix(float mix);
+
     float getRoomSize() const { return roomSize; }
     float getDamping() const { return damping; }
     float getMix() const { return dryWetMix; }

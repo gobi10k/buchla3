@@ -10,18 +10,14 @@
 // ============================================================================
 class EnhancedLowPassFilter : public AudioEffect {
 private:
-    float currentCutoff;    // Renamed from cutoff
-    float currentResonance; // Renamed from resonance
+    float currentCutoff;
+    float currentResonance;
     float sampleRate;
 
-    // State variables for the 4 poles
     float y1, y2, y3, y4;
-    // float oldx; // Not used in current ZDF-like implementation
-    // float oldy1, oldy2, oldy3; // Not used
 
-    // Coefficients
-    float g; // Controls cutoff frequency (higher g = higher cutoff)
-    float k; // Controls resonance feedback amount (0-4 typical for Moog)
+    float g;
+    float k;
 
     void calculateCoefficients();
 
@@ -32,7 +28,9 @@ public:
     void setParameter(const std::string& name, float value) override;
     void reset() override;
 
-    // Public getters for current parameters
+    void setCutoff(float cutoff);
+    void setResonance(float resonance);
+
     float getCutoff() const { return currentCutoff; }
     float getResonance() const { return currentResonance; }
 };

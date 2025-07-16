@@ -55,24 +55,23 @@ void EnhancedLowPassFilter::process(float& sample) {
     sample = y4;
 }
 
+void EnhancedLowPassFilter::setCutoff(float cutoff) {
+    currentCutoff = constrain(cutoff, 20.0f, sampleRate / 2.5f);
+    calculateCoefficients();
+}
+
+void EnhancedLowPassFilter::setResonance(float resonance) {
+    currentResonance = constrain(resonance, 0.0f, 1.0f);
+    calculateCoefficients();
+}
+
 void EnhancedLowPassFilter::setParameter(const std::string& name, float value) {
-    bool coeffsChanged = false;
     if (name == "cutoff") {
-        currentCutoff = constrain(value, 20.0f, sampleRate / 2.5f);
-        coeffsChanged = true;
-        // Serial.printf("LPF Cutoff: %.1f Hz\n", currentCutoff);
+        setCutoff(value);
     } else if (name == "resonance") {
-        currentResonance = constrain(value, 0.0f, 1.0f);
-        coeffsChanged = true;
-        // Serial.printf("LPF Resonance: %.2f\n", currentResonance);
+        setResonance(value);
     } else if (name == "enabled") {
         enabled = (value > 0.5f);
-        // Serial.printf("LPF Enabled: %s\n", enabled ? "True" : "False");
-    }
-
-
-    if (coeffsChanged) {
-        calculateCoefficients(); // Recalculate g and k when cutoff or resonance change
     }
 }
 

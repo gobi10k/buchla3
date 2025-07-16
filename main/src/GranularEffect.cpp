@@ -115,25 +115,57 @@ float GranularEffect::getParameter(const std::string& key) const {
     return 0.0f;
 }
 
+void GranularEffect::setDensity(float d) {
+    grainDensity = constrain(d, 0.1f, 100.0f);
+    updateGrainTiming();
+}
+
+void GranularEffect::setGrainSize(uint32_t size) {
+    baseGrainSize = constrain(size, (uint32_t)16, (uint32_t)INPUT_BUFFER_SIZE / 2);
+    updateGrainTiming();
+}
+
+void GranularEffect::setGrainSizeVariation(float variation) {
+    grainSizeVariation = constrain(variation, 0.0f, 1.0f);
+}
+
+void GranularEffect::setPlaybackRate(float rate) {
+    playbackRate = constrain(rate, -4.0f, 4.0f);
+}
+
+void GranularEffect::setPitchVariation(float variation) {
+    pitchVariation = constrain(variation, 0.0f, 1.0f);
+}
+
+void GranularEffect::setPositionSpray(float spray) {
+    positionSpray = constrain(spray, 0.0f, 1.0f);
+}
+
+void GranularEffect::setTimeShift(float shift) {
+    timeShift = constrain(shift, -1.0f, 1.0f);
+}
+
+void GranularEffect::setMix(float m) {
+    dryWetMix = constrain(m, 0.0f, 1.0f);
+}
+
 void GranularEffect::setParameter(const std::string& key, float value) {
     if (key == "dry_wet") {
-        dryWetMix = constrain(value, 0.0f, 1.0f);
+        setMix(value);
     } else if (key == "density") {
-        grainDensity = constrain(value, 0.1f, 100.0f);
-        updateGrainTiming();
+        setDensity(value);
     } else if (key == "grain_size") {
-        baseGrainSize = constrain((uint32_t)value, (uint32_t)16, (uint32_t)INPUT_BUFFER_SIZE / 2);
-        updateGrainTiming();
+        setGrainSize((uint32_t)value);
     } else if (key == "grain_variation") {
-        grainSizeVariation = constrain(value, 0.0f, 1.0f);
+        setGrainSizeVariation(value);
     } else if (key == "playback_rate") {
-        playbackRate = constrain(value, 0.1f, 4.0f);
+        setPlaybackRate(value);
     } else if (key == "pitch_variation") {
-        pitchVariation = constrain(value, 0.0f, 1.0f);
+        setPitchVariation(value);
     } else if (key == "time_shift") {
-        timeShift = constrain(value, -1.0f, 1.0f);
+        setTimeShift(value);
     } else if (key == "spray") {
-        positionSpray = constrain(value, 0.0f, 1.0f);
+        setPositionSpray(value);
     } else if (key == "enabled") {
         enabled = (value > 0.5f);
     }

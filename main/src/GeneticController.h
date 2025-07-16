@@ -5,13 +5,10 @@
 #include "config.h"
 #include <Arduino.h>
 
-// ============================================================================
-// Genetic Algorithm Parameter Controller - Evolving effect parameters
-// ============================================================================
 class GeneticController : public AudioEffect {
 public:
     enum ControlMode {
-        BYPASS = 0, EVOLVE_CONTINUOUS, EVOLVE_DISCRETE, MORPH_BETWEEN, NUM_CONTROL_MODES
+        BYPASS = 0, EVOLVE_CONTINUOUS, EVOLVE_DISCRETE, MORPH_BETWEEN, MACRO, NUM_CONTROL_MODES
     };
     
 private:
@@ -28,9 +25,16 @@ private:
         float fitness;
         uint32_t age;
     };
+
+    struct MacroControlPoint {
+        float controlValue;
+        float paramValues[MAX_CONTROLLABLE_PARAMETERS];
+    };
     
     ParameterGenome population[CONTROLLER_POPULATION_SIZE];
     Parameter parameters[MAX_CONTROLLABLE_PARAMETERS];
+    MacroControlPoint macroMap[MAX_MACRO_CONTROL_POINTS];
+    int numMacroPoints;
     int numParameters;
     int currentGenomeIndex;
     int generation;
@@ -39,6 +43,7 @@ private:
     float currentEvolutionRate;
     float currentMutationRate;
     float currentMorphSpeed;
+    float macroControlValue;
     
     AudioSource* targetSource;
     AudioEffect* targetEffect;
@@ -62,7 +67,7 @@ public:
     
     void setTarget(AudioSource* source);
     void setTarget(AudioEffect* effect);
-    AudioEffect* getTargetEffect() const { return targetEffect; } // Renamed from getTarget
+    AudioEffect* getTargetEffect() const { return targetEffect; }
     AudioSource* getTargetSource() const { return targetSource; }
     void clearTarget();
     
@@ -71,8 +76,11 @@ public:
     void evolveOnce() { evolvePopulation(); updateAndApplyCurrentParameters(); }
 
     void rateCurrentGenome(float rating);
-    void loadPreset(int presetNumber); // Added
-    void setControlMode(ControlMode mode); // Ensured public
+    void loadPreset(int presetNumber);
+    void setControlMode(ControlMode mode);
+
+    bool addMacroControlPoint(float controlValue, const float* paramValues, int numValues);
+    void clearMacroControlPoints();
 
     // Getters
     ControlMode getControlMode() const { return currentControlMode; }
@@ -88,12 +96,13 @@ public:
     
     void printCurrentParameters();
     void printPopulationStatus();
-    void randomizeGenome(int index); // Added public declaration
+    void randomizeGenome(int index);
 
 private:
     void mutateGenome(ParameterGenome& genome);
     void crossoverGenomes(const ParameterGenome& parent1, const ParameterGenome& parent2, ParameterGenome& child);
     void updateAndApplyCurrentParameters();
+    void applyMacroControl();
     void constrainGenomeValues(ParameterGenome& genome);
     int selectParentByTournament();
     void performMorph();

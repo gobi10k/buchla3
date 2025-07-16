@@ -172,22 +172,33 @@ void BuchlaLPG::process(float& sample) {
     sample = constrain(y_o, -10.0f, 10.0f);
 }
 
+void BuchlaLPG::setCv(float c) {
+    cv = constrain(c, 0.0f, 1.0f);
+    targetIf = minIf + cv * (maxIf - minIf);
+}
+
+void BuchlaLPG::setResonance(float r) {
+    resonance = constrain(r, 0.0f, 0.95f);
+}
+
+void BuchlaLPG::setMode(Mode m) {
+    mode = m;
+    updateCoefficients();
+}
+
 void BuchlaLPG::setParameter(const std::string& name, float value) {
     if (name == "cv") {
-        cv = constrain(value, 0.0f, 1.0f);
-        targetIf = minIf + cv * (maxIf - minIf);
+        setCv(value);
     }
     else if (name == "resonance") {
-        resonance = constrain(value, 0.0f, 0.95f); // Limit max resonance
+        setResonance(value);
     }
     else if (name == "mode") {
-        mode = static_cast<Mode>(constrain(static_cast<int>(value), 0, 2));
-        updateCoefficients(); // Update coefficients when mode changes
+        setMode(static_cast<Mode>(constrain(static_cast<int>(value), 0, 2)));
     }
     else if (name == "enabled") {
         enabled = (value > 0.5f);
         if (enabled) {
-            // Soft reset when enabling
             s_d *= 0.1f;
             s_x *= 0.1f;
             s_o *= 0.1f;

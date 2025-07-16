@@ -8,9 +8,9 @@
 class BuchlaLPG : public AudioEffect {
 public:
     enum Mode {
-        BOTH,     // Lowpass filter mode
-        VCA,      // Voltage-controlled amplifier mode
-        LOWPASS   // Resonant lowpass mode
+        BOTH,
+        VCA,
+        LOWPASS
     };
 
     BuchlaLPG();
@@ -18,6 +18,10 @@ public:
     void reset() override;
     void setParameter(const std::string& name, float value) override;
     float getParameter(const std::string& name) const;
+
+    void setCv(float cv);
+    void setResonance(float resonance);
+    void setMode(Mode mode);
 
 private:
     void updateVactrol();

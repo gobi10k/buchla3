@@ -100,22 +100,29 @@ void ReverbEffect::process(float& sample) {
     sample = (sample * (1.0f - dryWetMix)) + (wetSignal * dryWetMix);
 }
 
+void ReverbEffect::setRoomSize(float size) {
+    roomSize = constrain(size, 0.0f, 1.0f);
+    configureFilters();
+}
+
+void ReverbEffect::setDamping(float d) {
+    damping = constrain(d, 0.0f, 1.0f);
+    configureFilters();
+}
+
+void ReverbEffect::setMix(float mix) {
+    dryWetMix = constrain(mix, 0.0f, 1.0f);
+}
+
 void ReverbEffect::setParameter(const std::string& name, float value) {
-    bool needsReconfig = false;
     if (name == "roomSize") {
-        roomSize = constrain(value, 0.0f, 1.0f);
-        needsReconfig = true;
+        setRoomSize(value);
     } else if (name == "damping") {
-        damping = constrain(value, 0.0f, 1.0f);
-        needsReconfig = true;
+        setDamping(value);
     } else if (name == "mix") {
-        dryWetMix = constrain(value, 0.0f, 1.0f);
+        setMix(value);
     } else if (name == "enabled") {
         enabled = (value > 0.5f);
-    }
-
-    if (needsReconfig) {
-        configureFilters();
     }
 }
 

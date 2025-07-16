@@ -66,32 +66,41 @@ void ChorusEffect::process(float& sample) {
     sample = (sample * (1.0f - dryWetMix)) + (interpolatedDelayedSample * dryWetMix);
 }
 
+void ChorusEffect::setRate(float rate) {
+    lfoRate = constrain(rate, 0.01f, 10.0f);
+}
+
+void ChorusEffect::setDepth(float d) {
+    depth = constrain(d, 0.1f, 20.0f);
+    updateMaxDelaySamples();
+}
+
+void ChorusEffect::setBaseDelay(float delay) {
+    baseDelayMs = constrain(delay, 1.0f, 50.0f);
+    updateMaxDelaySamples();
+}
+
+void ChorusEffect::setMix(float mix) {
+    dryWetMix = constrain(mix, 0.0f, 1.0f);
+}
+
+void ChorusEffect::setFeedback(float fb) {
+    feedback = constrain(fb, 0.0f, 0.95f);
+}
+
 void ChorusEffect::setParameter(const std::string& name, float value) {
-    bool needsResize = false;
     if (name == "rate") {
-        lfoRate = constrain(value, 0.01f, 10.0f); // Typical LFO rates
-        Serial.printf("Chorus Rate: %.2f Hz\n", lfoRate);
+        setRate(value);
     } else if (name == "depth") {
-        depth = constrain(value, 0.1f, 20.0f); // Depth in ms
-        Serial.printf("Chorus Depth: %.1f ms\n", depth);
-        needsResize = true;
+        setDepth(value);
     } else if (name == "delay") {
-        baseDelayMs = constrain(value, 1.0f, 50.0f); // Base delay in ms
-        Serial.printf("Chorus Base Delay: %.1f ms\n", baseDelayMs);
-        needsResize = true;
+        setBaseDelay(value);
     } else if (name == "mix") {
-        dryWetMix = constrain(value, 0.0f, 1.0f);
-        Serial.printf("Chorus Mix: %.2f\n", dryWetMix);
+        setMix(value);
     } else if (name == "feedback") {
-        feedback = constrain(value, 0.0f, 0.95f); // Feedback < 1 for stability
-        Serial.printf("Chorus Feedback: %.2f\n", feedback);
+        setFeedback(value);
     } else if (name == "enabled") {
         enabled = (value > 0.5f);
-         Serial.printf("Chorus Enabled: %s\n", enabled ? "True" : "False");
-    }
-
-    if (needsResize) {
-        updateMaxDelaySamples();
     }
 }
 

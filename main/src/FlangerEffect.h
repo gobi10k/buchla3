@@ -17,20 +17,17 @@ class FlangerEffect : public AudioEffect {
 private:
     CombFilter combFilter;
 
-    // LFO parameters
-    float lfoRate;      // Hz (e.g., 0.05 to 2 Hz)
+    float lfoRate;
     float lfoPhase;
-    float lfoDepthMs;   // Modulation depth in milliseconds (e.g., 0.5 to 5 ms)
+    float lfoDepthMs;
 
-    // Flanger parameters
-    float baseDelayMs;  // Base (center) delay in milliseconds (e.g., 1 to 10 ms)
-    float feedback;     // Feedback for the comb filter (-0.9 to 0.9)
-    float dryWetMix;    // 0.0 (dry) to 1.0 (wet)
+    float baseDelayMs;
+    float feedback;
+    float dryWetMix;
 
-    // Internal state
-    int currentMaxCombDelaySamples; // To track if comb filter needs resizing
+    int currentMaxCombDelaySamples;
 
-    void updateCombFilterSettings(); // Recalculates max delay for comb filter
+    void updateCombFilterSettings();
 
 public:
     FlangerEffect(float rate = 0.2f, float depthMs = 2.5f, float delayMs = 5.0f,
@@ -41,7 +38,12 @@ public:
     float getParameter(const std::string& name) const override;
     void reset() override;
 
-    // Getters for potential UI display
+    void setRate(float rate);
+    void setDepth(float depth);
+    void setBaseDelay(float delay);
+    void setFeedback(float feedback);
+    void setMix(float mix);
+
     float getRate() const { return lfoRate; }
     float getDepth() const { return lfoDepthMs; }
     float getBaseDelay() const { return baseDelayMs; }

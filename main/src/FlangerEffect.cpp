@@ -71,20 +71,40 @@ void FlangerEffect::process(float& sample) {
     sample = (sample * (1.0f - dryWetMix)) + (wetSignal * dryWetMix);
 }
 
+void FlangerEffect::setRate(float rate) {
+    lfoRate = rate;
+}
+
+void FlangerEffect::setDepth(float depth) {
+    lfoDepthMs = depth;
+    updateCombFilterSettings();
+}
+
+void FlangerEffect::setBaseDelay(float delay) {
+    baseDelayMs = delay;
+    updateCombFilterSettings();
+}
+
+void FlangerEffect::setFeedback(float fb) {
+    feedback = fb;
+    combFilter.setFeedback(feedback);
+}
+
+void FlangerEffect::setMix(float mix) {
+    dryWetMix = mix;
+}
+
 void FlangerEffect::setParameter(const std::string& name, float value) {
     if (name == "rate") {
-        lfoRate = value;
+        setRate(value);
     } else if (name == "depth") {
-        lfoDepthMs = value;
-        updateCombFilterSettings();
+        setDepth(value);
     } else if (name == "delay") {
-        baseDelayMs = value;
-        updateCombFilterSettings();
+        setBaseDelay(value);
     } else if (name == "feedback") {
-        feedback = value;
-        combFilter.setFeedback(feedback);
+        setFeedback(value);
     } else if (name == "mix") {
-        dryWetMix = value;
+        setMix(value);
     }
 }
 

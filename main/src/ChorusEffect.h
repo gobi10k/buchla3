@@ -10,12 +10,12 @@
 // ============================================================================
 class ChorusEffect : public AudioEffect {
 private:
-    float lfoRate;      // Hz (e.g., 0.1 to 5 Hz)
+    float lfoRate;
     float lfoPhase;
-    float depth;        // Modulated delay depth in milliseconds (e.g., 1 to 10 ms)
-    float baseDelayMs;  // Base static delay in milliseconds (e.g., 10 to 30 ms)
-    float dryWetMix;    // 0.0 (dry) to 1.0 (wet)
-    float feedback;     // 0.0 to <1.0 for flanger-like effects, typically low for chorus
+    float depth;
+    float baseDelayMs;
+    float dryWetMix;
+    float feedback;
 
     std::vector<float> delayBuffer;
     int delayBufferPos;
@@ -30,7 +30,12 @@ public:
     void setParameter(const std::string& name, float value) override;
     void reset() override;
 
-    // Getters for status display
+    void setRate(float rate);
+    void setDepth(float depth);
+    void setBaseDelay(float delay);
+    void setMix(float mix);
+    void setFeedback(float feedback);
+
     float getRate() const { return lfoRate; }
     float getDepth() const { return depth; }
     float getBaseDelay() const { return baseDelayMs; }

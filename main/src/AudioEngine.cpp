@@ -6,8 +6,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include <string>
-#include <string>
-#include <string>
 
 AudioEngine* AudioEngine::instance = nullptr;
 
@@ -15,9 +13,9 @@ AudioEngine::AudioEngine()
     : audioTaskHandle(nullptr), outputBuffer(nullptr),
       currentAudioSource(nullptr), effectCount(0), running(false),
       sampleTimer(nullptr), underrunCounter(0), overrunCounter(0), processedSampleCount(0),
-      masterVolume(1.0f), dacDithererLeft(), dacDithererRight() { // Initialize masterVolume
+      masterVolume(1.0f), dacDithererLeft(), dacDithererRight(), routingManager(nullptr) {
     instance = this;
-    memset(effects, 0, sizeof(effects)); // Clear effects array
+    memset(effects, 0, sizeof(effects));
     runningSemaphore = xSemaphoreCreateMutex();
 }
 
@@ -30,17 +28,17 @@ AudioEngine::~AudioEngine() {
     vSemaphoreDelete(runningSemaphore);
 }
 
-bool AudioEngine::initialize() {
+bool AudioEngine::initialize(RoutingManager& rm) {
+    routingManager = &rm;
     Serial.println("AudioEngine: Initializing DAC...");
     if (dac_output_enable(DAC_CHANNEL_1) != ESP_OK) {
         Serial.println("AudioEngine: DAC enable failed!");
         return false;
     }
-    // Brief DAC test tone/sequence (optional)
-    dac_output_voltage(DAC_CHANNEL_1, 128); // Set to midpoint initially
+    dac_output_voltage(DAC_CHANNEL_1, 128);
     Serial.println("AudioEngine: DAC initialized.");
 
-    outputBuffer = new AudioBuffer(AUDIO_BUFFER_SIZE); // AUDIO_BUFFER_SIZE from config.h
+    outputBuffer = new AudioBuffer(AUDIO_BUFFER_SIZE);
     if (!outputBuffer || !outputBuffer->isValid()) {
         Serial.println("AudioEngine: Buffer allocation failed!");
         cleanup();
@@ -49,13 +47,13 @@ bool AudioEngine::initialize() {
     Serial.printf("AudioEngine: Buffer created (size: %d samples)\n", AUDIO_BUFFER_SIZE);
 
     BaseType_t taskResult = xTaskCreatePinnedToCore(
-        audioProcessingTask,    // Task function
-        "AudioProcTask",        // Name of task
-        AUDIO_TASK_STACK_SIZE,  // Stack size
-        this,                   // Parameter to pass to task
-        AUDIO_TASK_PRIORITY,    // Priority
-        &audioTaskHandle,       // Task handle
-        AUDIO_CORE              // Core to pin to
+        audioProcessingTask,
+        "AudioProcTask",
+        AUDIO_TASK_STACK_SIZE,
+        this,
+        AUDIO_TASK_PRIORITY,
+        &audioTaskHandle,
+        AUDIO_CORE
     );
 
     if (taskResult != pdPASS) {
@@ -78,6 +76,7 @@ bool AudioEngine::initialize() {
         return false;
     }
     Serial.println("AudioEngine: Sample timer created.");
+    updateRouting();
     return true;
 }
 
@@ -111,14 +110,12 @@ void AudioEngine::stop() {
         esp_timer_stop(sampleTimer);
         Serial.println("AudioEngine: Sample timer stopped.");
     }
-    dac_output_voltage(DAC_CHANNEL_1, 128); // Output silence (midpoint)
-    vTaskDelay(pdMS_TO_TICKS(50)); // Allow task to complete current cycle
+    dac_output_voltage(DAC_CHANNEL_1, 128);
+    vTaskDelay(pdMS_TO_TICKS(50));
     Serial.println("AudioEngine: Stopped.");
 }
 
 void AudioEngine::setAudioSource(AudioSource* source) {
-    // This should ideally be thread-safe if called while running.
-    // For simplicity, assume it's called when safe (e.g., engine stopped or via controlled mechanism).
     currentAudioSource = source;
     if (source) {
         Serial.printf("AudioEngine: Audio source set to %p\n", source);
@@ -127,20 +124,10 @@ void AudioEngine::setAudioSource(AudioSource* source) {
     }
 }
 
-bool AudioEngine::addEffect(AudioEffect* effect) {
-    if (effectCount >= MAX_EFFECTS) {
-        Serial.println("AudioEngine: Max effects reached, cannot add more.");
-        return false;
+void AudioEngine::updateRouting() {
+    if (routingManager) {
+        routingManager->applyRouting(effects, effectCount);
     }
-    effects[effectCount++] = effect;
-    Serial.printf("AudioEngine: Effect %p added. Total effects: %d\n", effect, effectCount);
-    return true;
-}
-
-void AudioEngine::removeAllEffects() {
-    effectCount = 0;
-    // Optionally: memset(effects, 0, sizeof(effects)); but not strictly needed if using effectCount.
-    Serial.println("AudioEngine: All effects removed.");
 }
 
 size_t AudioEngine::getBufferLevel() const {

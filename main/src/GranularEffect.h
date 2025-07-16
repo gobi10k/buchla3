@@ -66,6 +66,15 @@ public:
     void reset() override;
 
     void setWindowType(WindowType type);
+    void setDensity(float density);
+    void setGrainSize(uint32_t size);
+    void setGrainSizeVariation(float variation);
+    void setPlaybackRate(float rate);
+    void setPitchVariation(float variation);
+    void setPositionSpray(float spray);
+    void setTimeShift(float shift);
+    void setMix(float mix);
+
     WindowType getWindowType() const { return windowType; }
     void loadPreset(int presetNumber);
 
@@ -74,6 +83,10 @@ public:
     float getPlaybackRate() const { return playbackRate; }
     float getDryWetMix() const { return dryWetMix; }
     size_t getActiveGrainCount() const { return activeGrainCount; }
+    float getGrainVariation() const { return grainSizeVariation; }
+    float getPitchVariation() const { return pitchVariation; }
+    float getPositionSpray() const { return positionSpray; }
+    float getTimeShift() const { return timeShift; }
 
     static void ensureWindowTablesInitialized() { // Public static method
         if (!windowTablesInitialized) {
