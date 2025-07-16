@@ -40,7 +40,7 @@ float FMSynth::Operator::generateSample(float modulation, float feedbackInput) {
     return sample * amplitude * envelope.getAmplitude();
 }
 
-void FMSynth::Operator::setWaveform(FM_Waveform wf) {
+void FMSynth::Operator::setWaveform(Waveform wf) {
     if (wf < NUM_WAVEFORMS) waveform = wf;
 }
 
@@ -169,11 +169,11 @@ void FMSynth::setParameter(const std::string& name, float value) {
     } else if (name == "feedback") {
         feedbackAmount = constrain(value, 0.0f, 0.99f);
     } else if (name == "algorithm") {
-        setAlgorithm(static_cast<FM_Algorithm>(static_cast<int>(constrain(value, 0, NUM_ALGORITHMS - 1))));
+        setAlgorithm(static_cast<Algorithm>(static_cast<int>(constrain(value, 0, NUM_ALGORITHMS - 1))));
     } else if (name == "mod_waveform") {
-        setModulatorWaveform(static_cast<FM_Waveform>(static_cast<int>(constrain(value, 0, NUM_WAVEFORMS - 1))));
+        setModulatorWaveform(static_cast<Waveform>(static_cast<int>(constrain(value, 0, NUM_WAVEFORMS - 1))));
     } else if (name == "car_waveform") {
-        setCarrierWaveform(static_cast<FM_Waveform>(static_cast<int>(constrain(value, 0, NUM_WAVEFORMS - 1))));
+        setCarrierWaveform(static_cast<Waveform>(static_cast<int>(constrain(value, 0, NUM_WAVEFORMS - 1))));
     }
     else if (name == "attack") { setAttack(value); }
     else if (name == "decay") { setDecay(value); }
@@ -189,15 +189,15 @@ void FMSynth::setParameter(const std::string& name, float value) {
     else if (name == "car_release") { setCarrierRelease(value); }
 }
 
-void FMSynth::setAlgorithm(FM_Algorithm alg) {
+void FMSynth::setAlgorithm(Algorithm alg) {
     if (alg < NUM_ALGORITHMS) {
         currentAlgorithm = alg;
         Serial.printf("FM algorithm: %s\n", getAlgorithmName(alg));
     }
 }
 
-void FMSynth::setModulatorWaveform(FM_Waveform wf) { modulator.setWaveform(wf); }
-void FMSynth::setCarrierWaveform(FM_Waveform wf) { carrier.setWaveform(wf); }
+void FMSynth::setModulatorWaveform(Waveform wf) { modulator.setWaveform(wf); }
+void FMSynth::setCarrierWaveform(Waveform wf) { carrier.setWaveform(wf); }
 
 // Master Envelope setters are in the header (inline)
 
@@ -224,7 +224,7 @@ void FMSynth::updateOperatorFrequencies() {
 
 // applyOperatorEnvelopes removed as envelopes are self-managing
 
-const char* FMSynth::getAlgorithmName(FM_Algorithm alg) {
+const char* FMSynth::getAlgorithmName(Algorithm alg) {
     switch (alg) {
         case SIMPLE_FM: return "Simple (M->C)";
         case PARALLEL_FM: return "Parallel (M+C)";
@@ -234,7 +234,7 @@ const char* FMSynth::getAlgorithmName(FM_Algorithm alg) {
     }
 }
 
-const char* FMSynth::getWaveformName(FM_Waveform wf) {
+const char* FMSynth::getWaveformName(Waveform wf) {
     switch (wf) {
         case SINE: return "Sine";
         case TRIANGLE: return "Triangle";

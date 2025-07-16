@@ -23,8 +23,17 @@ enum FM_Waveform {
 
 class FMSynth : public AudioSource {
 public:
-    using Algorithm = FM_Algorithm;
-    using Waveform = FM_Waveform;
+    enum Algorithm {
+        SIMPLE_FM = 0,      // Modulator -> Carrier (classic FM)
+        PARALLEL_FM,        // Modulator + Carrier output
+        FEEDBACK_FM,        // Modulator -> Carrier with feedback on Carrier
+        MOD_FEEDBACK_FM,    // Modulator with feedback -> Carrier
+        NUM_ALGORITHMS
+    };
+
+    enum Waveform {
+        SINE = 0, TRIANGLE, SAWTOOTH, SQUARE, NUM_WAVEFORMS
+    };
 
 private:
     struct Operator {

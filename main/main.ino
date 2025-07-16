@@ -29,7 +29,7 @@
 #include "esp_random.h"
 
 AudioEngine audioEngine;
-WavetableSynth wavetableSynth(DEFAULT_SYNTH_FREQUENCY, 100, WavetableSynth::SINE);
+WavetableSynth wavetableSynth(DEFAULT_SYNTH_FREQUENCY, 100, SINE_WT);
 FMSynth fmSynth(DEFAULT_SYNTH_FREQUENCY, 1.0f, 1.0f, 100);
 // mainADSR is currently not used as an effect; synths have internal envelopes.
 // ADSREnvelope mainADSR(0.02f, 0.2f, 0.8f, 0.5f);
@@ -78,24 +78,12 @@ void setup() {
     setCpuFrequencyMhz(240);
     Serial.printf("CPU frequency: %d MHz, Free heap: %u bytes\n", getCpuFrequencyMhz(), esp_get_free_heap_size());
     
-    if (!audioEngine.initialize()) {
+    if (!audioEngine.initialize(routingManager)) {
         Serial.println("FATAL: Audio engine initialization failed!");
         while(1);
     }
     
     audioEngine.setAudioSource(&wavetableSynth);
-
-    audioEngine.addEffect(&dcBlocker);
-    audioEngine.addEffect(&antiAliasFilter); // Restore the corrected filter
-    audioEngine.addEffect(&granularEffect);
-    audioEngine.addEffect(&lowpass);
-    audioEngine.addEffect(&chorusEffect);
-    audioEngine.addEffect(&flangerEffect); // New
-    audioEngine.addEffect(&reverbEffect);  // New
-    audioEngine.addEffect(&buchlaLPG);
-    audioEngine.addEffect(&compressor);
-    audioEngine.addEffect(&limiter);
-    audioEngine.addEffect(&geneticController);
     
     // Vocoder setup: Set default carrier and modulator (e.g., wavetable and fm)
     // Users can change this via serial commands later.

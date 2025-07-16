@@ -17,7 +17,7 @@
 struct WavetablePreset {
     float frequency;
     float amplitude;
-    WT_WaveformType waveform;
+    WavetableSynth::WaveformType waveform;
 };
 
 struct FMSynthPreset {
@@ -26,9 +26,9 @@ struct FMSynthPreset {
     float mod_ratio;
     float mod_index;
     float feedback;
-    FM_Algorithm algorithm;
-    FM_Waveform mod_waveform;
-    FM_Waveform car_waveform;
+    FMSynth::Algorithm algorithm;
+    FMSynth::Waveform mod_waveform;
+    FMSynth::Waveform car_waveform;
     float master_attack;
     float master_decay;
     float master_sustain;
