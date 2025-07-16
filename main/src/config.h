@@ -15,6 +15,7 @@
 // Genetic Controller specific constants
 #define MAX_CONTROLLABLE_PARAMETERS 8
 #define CONTROLLER_POPULATION_SIZE 6
+#define MAX_MACRO_CONTROL_POINTS 16
 
 
 // Math constants (if not available or for consistency)

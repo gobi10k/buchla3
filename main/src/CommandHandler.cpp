@@ -305,8 +305,8 @@ void CommandHandler::handleCommand(char* command) {
         else if (strcmp(command, "CC") == 0) geneticController.clearParameters();
         else if (src && src->getSynthType() == SYNTH_TYPE_FM) {
             FMSynth* fm = static_cast<FMSynth*>(src);
-            if (strcmp(prefix, "mw") == 0) fm->setModulatorWaveform((FMSynth::Waveform)intVal);
-            else if (strcmp(prefix, "cw") == 0) fm->setCarrierWaveform((FMSynth::Waveform)intVal);
+            if (strcmp(prefix, "mw") == 0) fm->setModulatorWaveform((FM_Waveform)intVal);
+            else if (strcmp(prefix, "cw") == 0) fm->setCarrierWaveform((FM_Waveform)intVal);
         }
         else if (strcmp(prefix, "AA") == 0) {
             antiAliasFilter.setParameter("coeff", val);
@@ -335,7 +335,7 @@ void CommandHandler::handleCommand(char* command) {
         case 'c': lowpass.setCutoff(val); break;
         case 'Q': lowpass.setResonance(val); break;
         case 'w':
-            if (src && src->getSynthType() == SYNTH_TYPE_WAVETABLE) static_cast<WavetableSynth*>(src)->setWaveform((WavetableSynth::WaveformType)intVal);
+            if (src && src->getSynthType() == SYNTH_TYPE_WAVETABLE) static_cast<WavetableSynth*>(src)->setWaveform((WT_WaveformType)intVal);
             else Serial.println("Wavetable command only.");
             break;
         case 'g':
@@ -349,7 +349,7 @@ void CommandHandler::handleCommand(char* command) {
         case 'r': if (src && src->getSynthType() == SYNTH_TYPE_FM) static_cast<FMSynth*>(src)->setParameter("mod_ratio", val); else Serial.println("FM cmd only."); break;
         case 'i': if (src && src->getSynthType() == SYNTH_TYPE_FM) static_cast<FMSynth*>(src)->setParameter("mod_index", val); else Serial.println("FM cmd only."); break;
         case 'b': if (src && src->getSynthType() == SYNTH_TYPE_FM) static_cast<FMSynth*>(src)->setParameter("feedback", val); else Serial.println("FM cmd only."); break;
-        case 'l': if (src && src->getSynthType() == SYNTH_TYPE_FM) static_cast<FMSynth*>(src)->setAlgorithm((FMSynth::Algorithm)intVal); else Serial.println("FM cmd only."); break;
+        case 'l': if (src && src->getSynthType() == SYNTH_TYPE_FM) static_cast<FMSynth*>(src)->setAlgorithm((FM_Algorithm)intVal); else Serial.println("FM cmd only."); break;
         case 'k': if (src && src->getSynthType() == SYNTH_TYPE_KARPLUS_STRONG) static_cast<KarplusStrongSynth*>(src)->setFeedback(constrain(val, 0.9f, 1.0f)); else Serial.println("Karplus cmd only."); break;
         case 'V': audioEngine.setMasterVolume(val); break;
         case 'L': limiter.setThreshold(val); break;

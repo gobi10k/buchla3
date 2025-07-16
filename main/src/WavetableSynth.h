@@ -8,12 +8,13 @@
 // ============================================================================
 // Wavetable Synthesizer - High-quality wavetable synthesis
 // ============================================================================
+enum WT_WaveformType {
+    SINE_WT = 0, SAW_WT, SQUARE_WT, TRIANGLE_WT, NOISE_WT, CUSTOM_WT, NUM_WAVEFORMS_WT
+};
+
 class WavetableSynth : public AudioSource {
 public:
-    enum WaveformType {
-        SINE = 0, SAW, SQUARE, TRIANGLE, NOISE, CUSTOM, NUM_WAVEFORMS
-    };
-
+    using WaveformType = WT_WaveformType;
 private:
     static const size_t WAVETABLE_SIZE = 256;
     static const size_t WAVETABLE_MASK = WAVETABLE_SIZE - 1;

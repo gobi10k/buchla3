@@ -20,7 +20,7 @@ namespace Presets {
 struct Wavetable {
     float frequency;
     float amplitude;
-    WavetableSynth::WaveformType waveform;
+    WT_WaveformType waveform;
 };
 
 struct FMSynth {
@@ -29,9 +29,9 @@ struct FMSynth {
     float mod_ratio;
     float mod_index;
     float feedback;
-    FMSynth::Algorithm algorithm;
-    FMSynth::Waveform mod_waveform;
-    FMSynth::Waveform car_waveform;
+    FM_Algorithm algorithm;
+    FM_Waveform mod_waveform;
+    FM_Waveform car_waveform;
     float master_attack;
     float master_decay;
     float master_sustain;

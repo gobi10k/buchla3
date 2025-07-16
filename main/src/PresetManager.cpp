@@ -23,7 +23,7 @@ PresetManager::PresetManager(WavetableSynth& wt, FMSynth& fm, KarplusStrongSynth
     // Preset 0: Default state (already saved)
 
     // Preset 1: Bright Saw with Reverb
-    presets[1].wavetable.waveform = WavetableSynth::SAW;
+    presets[1].wavetable.waveform = SAW_WT;
     presets[1].lpf.cutoff = 8000.0f;
     presets[1].lpf.resonance = 0.2f;
     presets[1].reverb.room_size = 0.9f;
@@ -31,7 +31,7 @@ PresetManager::PresetManager(WavetableSynth& wt, FMSynth& fm, KarplusStrongSynth
     presets[1].reverb.mix = 0.4f;
 
     // Preset 2: FM Bells
-    presets[2].fm.algorithm = FMSynth::Algorithm4;
+    presets[2].fm.algorithm = FEEDBACK_FM;
     presets[2].fm.mod_ratio = 3.5f;
     presets[2].fm.mod_index = 15.0f;
     presets[2].fm.mod_decay = 0.5f;

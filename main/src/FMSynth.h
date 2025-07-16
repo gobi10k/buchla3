@@ -9,19 +9,22 @@
 // ============================================================================
 // FM Synthesizer - 2-Operator Frequency Modulation synthesis
 // ============================================================================
+enum FM_Algorithm {
+    SIMPLE_FM = 0,
+    PARALLEL_FM,
+    FEEDBACK_FM,
+    MOD_FEEDBACK_FM,
+    NUM_ALGORITHMS
+};
+
+enum FM_Waveform {
+    SINE = 0, TRIANGLE, SAWTOOTH, SQUARE, NUM_WAVEFORMS
+};
+
 class FMSynth : public AudioSource {
 public:
-    enum Algorithm {
-        SIMPLE_FM = 0,      // Modulator -> Carrier (classic FM)
-        PARALLEL_FM,        // Modulator + Carrier output
-        FEEDBACK_FM,        // Modulator -> Carrier with feedback on Carrier
-        MOD_FEEDBACK_FM,    // Modulator with feedback -> Carrier
-        NUM_ALGORITHMS
-    };
-
-    enum Waveform {
-        SINE = 0, TRIANGLE, SAWTOOTH, SQUARE, NUM_WAVEFORMS
-    };
+    using Algorithm = FM_Algorithm;
+    using Waveform = FM_Waveform;
 
 private:
     struct Operator {
